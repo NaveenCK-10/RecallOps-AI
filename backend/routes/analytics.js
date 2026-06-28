@@ -42,6 +42,52 @@ router.get('/', async (req, res, next) => {
       .slice(0, 10)
       .map(([tag, count]) => ({ tag, count }));
 
+    // Pipeline Success
+    const pipelineSuccess = { successful: 0, failed: 0, healthy: 0 };
+    incidents.forEach(i => {
+      if (i.tags && (i.tags.includes('api-error') || i.tags.includes('fallback'))) pipelineSuccess.failed++;
+      else if (i.severity === 'healthy') pipelineSuccess.healthy++;
+      else pipelineSuccess.successful++;
+    });
+
+    // Cost Overview
+    let minCost = Infinity;
+    let maxCost = 0;
+    let totalCostActual = 0;
+    let costCount = 0;
+    
+    incidents.forEach(i => {
+      if (i.runtimeDecisions && typeof i.runtimeDecisions.actualCost === 'number') {
+        const cost = i.runtimeDecisions.actualCost;
+        if (cost < minCost) minCost = cost;
+        if (cost > maxCost) maxCost = cost;
+        totalCostActual += cost;
+        costCount++;
+      }
+    });
+    if (minCost === Infinity) minCost = 0;
+    const avgCost = costCount > 0 ? (totalCostActual / costCount) : 0;
+    const costOverview = {
+      avg: avgCost,
+      max: maxCost,
+      min: minCost,
+      total: totalCostActual
+    };
+
+    // Memory Usage
+    const existingReused = incidents.filter(i => i.runtimeDecisions?.memoryHits > 0).length;
+    const memoryMisses = incidents.filter(i => !i.runtimeDecisions || i.runtimeDecisions.memoryHits === 0).length;
+    const memoryUsage = {
+      newCreated: incidents.length,
+      existingReused,
+      misses: memoryMisses
+    };
+
+    // Average Confidence
+    const avgConfidence = incidents.length > 0 
+      ? Math.round(incidents.reduce((sum, i) => sum + (i.confidence || 0), 0) / incidents.length)
+      : 0;
+
     res.json({
       success: true,
       data: {
@@ -50,12 +96,16 @@ router.get('/', async (req, res, next) => {
         memoryHitRate: totalIncidents > 0 ? ((memoryHits / totalIncidents) * 100).toFixed(1) : 0,
         avgResolutionTime,
         costSaved,
-        totalCost: runtimeAnalytics.totalCost,
+        totalCost: costOverview.total,
         severityDistribution: severityDist,
         categoryDistribution: categories,
         topTags,
         memoryStats,
         runtimeAnalytics,
+        pipelineSuccess,
+        costOverview,
+        memoryUsage,
+        avgConfidence,
       },
     });
   } catch (err) {

@@ -144,7 +144,7 @@ class HindsightService {
   /** Search memories (SDK: recall). */
   async search(query, options = {}) {
     const startTime = Date.now();
-    const { limit = 5, type = null, minSimilarity = 0.1 } = options;
+    const { limit = 5, type = null, minSimilarity = 0.80 } = options;
 
     // Try official SDK first
     if (this.sdkAvailable) {

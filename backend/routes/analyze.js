@@ -9,8 +9,8 @@ router.post('/', async (req, res, next) => {
     if (!log || typeof log !== 'string' || !log.trim()) {
       return res.status(400).json({ success: false, error: 'Production log is required and must be a string' });
     }
-    if (log.length > 50000) {
-      return res.status(400).json({ success: false, error: 'Payload too large. Maximum 50,000 characters allowed.' });
+    if (log.length > 10000000) {
+      return res.status(400).json({ success: false, error: 'Payload exceeds maximum processing limit.' });
     }
     const result = await analysisService.analyzeIncident(log.trim());
     res.json({ success: true, data: result });

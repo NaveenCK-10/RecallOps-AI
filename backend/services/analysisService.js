@@ -16,6 +16,9 @@ import { nvidiaService } from './nvidiaService.js';
 import { analysisPrompt } from '../prompts/analysisPrompt.js';
 import { inMemoryStore } from '../config/db.js';
 import { logger } from '../utils/logger.js';
+import { preprocessLog } from '../utils/logPreprocessor.js';
+import { hasIncidentIndicators } from '../utils/incidentDetector.js';
+import { healthAssessmentPrompt } from '../prompts/healthPrompt.js';
 
 class AnalysisService {
   async analyzeIncident(rawLog) {
@@ -24,10 +27,19 @@ class AnalysisService {
 
     logger.info(`Starting analysis pipeline for ${incidentId}`);
 
+    const processedLog = preprocessLog(rawLog);
+    const hasIncidents = hasIncidentIndicators(processedLog);
+
+    if (hasIncidents) {
+      logger.info('Incident indicators detected, running RCA workflow');
+    } else {
+      logger.info('Log appears clean, running System Health Assessment');
+    }
+
     // ── Step 1: Search Hindsight for similar incidents ──────────────
-    const memorySearch = await hindsightService.search(rawLog, {
+    const memorySearch = await hindsightService.search(processedLog, {
       limit: 5,
-      minSimilarity: 0.1,
+      minSimilarity: 0.80,
     });
 
     const similarIncidents = memorySearch.results.map(mem => ({
@@ -42,14 +54,23 @@ class AnalysisService {
     }));
 
     // ── Step 2: Route through CascadeFlow ───────────────────────────
-    const runtimeDecision = await cascadeFlowService.routeRequest(rawLog, {
+    const runtimeDecision = await cascadeFlowService.routeRequest(processedLog, {
       hasSimilarIncidents: similarIncidents.length > 0,
       memoryHits: similarIncidents.length,
     });
 
     // ── Step 3: Run NVIDIA inference ────────────────────────────────
-    const prompt = analysisPrompt(rawLog, similarIncidents);
-    const inference = await nvidiaService.analyze(prompt, runtimeDecision.model);
+    const prompt = hasIncidents 
+      ? analysisPrompt(processedLog, similarIncidents)
+      : healthAssessmentPrompt(processedLog);
+      
+    const inference = await nvidiaService.analyze(prompt, runtimeDecision.model, !hasIncidents);
+    
+    if (inference.success === false) {
+      const err = new Error(inference.error || 'NVIDIA API failed');
+      err.statusCode = 503;
+      throw err;
+    }
 
     // Log execution metrics back to CascadeFlow
     await cascadeFlowService.logExecution(runtimeDecision.requestId, {
@@ -69,15 +90,15 @@ class AnalysisService {
     } catch (err) {
       logger.warn('Failed to parse AI response as JSON, using fallback', { error: err.message });
       analysis = {
-        title: 'Production Incident Detected',
-        rootCause: 'Analysis complete — review log details for specifics.',
-        severity: 'medium',
+        title: hasIncidents ? 'Production Incident Detected' : 'Status: No Critical Errors Detected',
+        rootCause: hasIncidents ? 'Analysis complete — review log details for specifics.' : 'Health Summary: AI fallback triggered due to timeout, but log is clean.',
+        severity: hasIncidents ? 'medium' : 'healthy',
         confidence: 70,
-        resolution: 'Further investigation recommended.',
-        explanation: inference.content.substring(0, 500),
-        category: 'application',
-        tags: ['needs-review'],
-        engineerNotes: 'AI response required manual parsing.',
+        resolution: hasIncidents ? 'Further investigation recommended.' : 'System appears to be operating normally based on pre-scan.',
+        explanation: inference.content ? inference.content.substring(0, 500) : 'No response from API.',
+        category: hasIncidents ? 'application' : 'system-health',
+        tags: hasIncidents ? ['needs-review'] : ['healthy', 'fallback'],
+        engineerNotes: 'AI response required manual parsing or timed out.',
       };
     }
 
@@ -125,7 +146,7 @@ class AnalysisService {
     // ── Step 6: Store in Hindsight memory ───────────────────────────
     await hindsightService.store({
       type: 'incident',
-      content: `${analysis.title}. ${analysis.rootCause}. Log: ${rawLog.substring(0, 500)}`,
+      content: `${analysis.title}. ${analysis.rootCause}. Log: ${processedLog.substring(0, 500)}`,
       summary: analysis.title,
       incidentId,
       tags: analysis.tags || [],

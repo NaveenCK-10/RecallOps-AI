@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Activity, AlertTriangle, CheckCircle2, Clock, Zap, ArrowRight, Brain, Cpu, Database } from 'lucide-react';
+import { Activity, AlertTriangle, CheckCircle2, Clock, Zap, ArrowRight, Brain, Cpu, Database, Network, ShieldCheck, BarChart3 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { getAnalytics, getIncidents } from '../services/api';
 import { useApp } from '../context/AppContext';
+import StatBox from '../components/ui/StatBox';
 
 export default function Dashboard() {
   const { state, dispatch } = useApp();
@@ -38,95 +39,98 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
-      {/* Header section */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-text-primary tracking-tight">RecallOps Dashboard</h1>
-          <p className="text-text-secondary mt-1">Production incident intelligence and autonomous resolution.</p>
+      
+      {/* 1. HERO MISSION CONTROL PANEL */}
+      <div className="card-primary rounded-xl p-8 relative overflow-hidden flex flex-col md:flex-row items-start justify-between gap-8 border border-white/10 shadow-2xl">
+        {/* Background elements */}
+        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-radial-glow opacity-30 pointer-events-none" />
+        <div className="absolute inset-0 bg-neural-grid opacity-20 pointer-events-none" />
+        
+        <div className="relative z-10 space-y-4 max-w-lg">
+          <div>
+            <h1 className="text-4xl font-bold text-white tracking-widest uppercase font-mono mb-2">RecallOps <span className="text-accent">AI</span></h1>
+            <p className="text-text-secondary font-mono text-sm tracking-widest uppercase">AI Incident Response Platform</p>
+          </div>
+          <p className="text-sm text-text-muted leading-relaxed max-w-md">
+            Autonomous root cause isolation utilizing persistent vector memory, dynamic multi-model routing, and Mistral Nemotron inference.
+          </p>
+          <motion.button 
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            transition={{ duration: 0.15 }}
+            onClick={() => navigate('/analyze')}
+            className="mt-6 flex items-center gap-2 bg-accent/10 border border-accent/50 hover:bg-accent text-accent hover:text-bg-primary px-6 py-3 rounded text-[11px] font-bold uppercase tracking-widest transition-colors duration-200 glow-accent w-fit"
+          >
+            <Zap className="w-4 h-4" />
+            Initialize Analysis
+          </motion.button>
         </div>
-        <button 
-          onClick={() => navigate('/analyze')}
-          className="flex items-center gap-2 bg-accent hover:bg-accent-light text-white px-5 py-2.5 rounded-lg font-medium transition-colors glow-accent w-fit"
-        >
-          <Zap className="w-4 h-4" />
-          Analyze New Incident
-        </button>
+
+        <div className="relative z-10 grid grid-cols-2 sm:grid-cols-3 gap-4 w-full md:w-auto">
+          <SystemStatusNode label="NVIDIA" status="Connected" active />
+          <SystemStatusNode label="Hindsight" status="Active" active />
+          <SystemStatusNode label="CascadeFlow" status="Ready" active />
+          <SystemStatusNode label="Memory Store" status="Healthy" active />
+          <SystemStatusNode label="Runtime" status="Monitoring" active />
+        </div>
       </div>
 
       {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {[1, 2, 3, 4].map(i => <div key={i} className="h-32 rounded-xl skeleton" />)}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 h-96 skeleton rounded-xl" />
+          <div className="h-96 skeleton rounded-xl" />
         </div>
       ) : (
         <>
-          {/* Stats Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <StatCard 
-              title="Total Incidents Analyzed" 
-              value={analytics?.totalIncidents || 0}
-              icon={<Activity className="w-5 h-5 text-accent-light" />}
-              trend="+12% this week"
-            />
-            <StatCard 
-              title="Memory Hit Rate" 
-              value={`${analytics?.memoryHitRate || 0}%`}
-              icon={<Brain className="w-5 h-5 text-purple" />}
-              trend="Hindsight persistent memory"
-            />
-            <StatCard 
-              title="Avg Resolution Time" 
-              value={`${analytics?.avgResolutionTime || 0}ms`}
-              icon={<Clock className="w-5 h-5 text-cyan" />}
-              trend="Pipeline latency"
-            />
-            <StatCard 
-              title="Cost Saved (Memory)" 
-              value={`$${analytics?.costSaved || 0}`}
-              icon={<Cpu className="w-5 h-5 text-success" />}
-              trend="Via CascadeFlow dynamic routing"
-            />
-          </div>
-
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Recent Incidents */}
-            <div className="lg:col-span-2 glass-card rounded-xl p-5 border border-border">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-text-primary flex items-center gap-2">
-                  <AlertTriangle className="w-5 h-5 text-warning" />
-                  Recent Incidents
+            
+            {/* 2. RECENT INCIDENTS (Pipeline Overview) */}
+            <div className="lg:col-span-2 space-y-4">
+              <div className="flex items-center justify-between px-2">
+                <h2 className="text-[10px] font-bold text-white tracking-widest uppercase flex items-center gap-2">
+                  <Activity className="w-4 h-4 text-accent" />
+                  Recent Pipeline Activity
                 </h2>
-                <button onClick={() => navigate('/analyze')} className="text-sm text-accent hover:text-accent-light flex items-center gap-1">
-                  View All <ArrowRight className="w-4 h-4" />
+                <button onClick={() => navigate('/runtime')} className="text-[10px] text-text-muted hover:text-white uppercase font-bold tracking-widest flex items-center gap-1 transition-colors">
+                  View Runtime <ArrowRight className="w-3 h-3" />
                 </button>
               </div>
-              
+
               <div className="space-y-3">
                 {incidents.length === 0 ? (
-                  <div className="text-center py-8 text-text-muted">No incidents analyzed yet.</div>
+                  <div className="card-glass p-10 text-center rounded-xl border border-dashed border-white/10">
+                    <p className="text-xs font-mono uppercase tracking-widest text-text-muted">No pipeline activity detected.</p>
+                  </div>
                 ) : (
                   incidents.map((incident, idx) => (
                     <motion.div 
-                      initial={{ opacity: 0, y: 10 }}
+                      initial={{ opacity: 0, y: 5 }}
                       animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: idx * 0.1 }}
+                      transition={{ delay: idx * 0.05, duration: 0.2 }}
                       key={incident.incidentId} 
-                      className="p-4 rounded-lg bg-bg-secondary border border-border hover:border-border-bright transition-colors cursor-pointer group"
                       onClick={() => navigate('/analyze', { state: { incident }})}
+                      className="card-raised p-4 rounded-xl border border-white/5 hover:border-white/20 transition-all duration-200 cursor-pointer group flex flex-col sm:flex-row sm:items-center justify-between gap-4"
                     >
-                      <div className="flex justify-between items-start mb-2">
-                        <div className="font-medium text-text-primary group-hover:text-accent-light transition-colors">
-                          {incident.title}
+                      <div className="flex items-start gap-4">
+                        <div className={`mt-1 w-2 h-2 rounded-full shrink-0 ${incident.severity === 'healthy' ? 'bg-success pulse-green' : 'bg-warning pulse-amber'}`} />
+                        <div>
+                          <div className="text-sm font-bold text-white mb-1 group-hover:text-accent transition-colors">{incident.title}</div>
+                          <div className="flex items-center gap-4 text-[10px] font-mono text-text-muted uppercase tracking-widest">
+                            <span className="flex items-center gap-1.5"><Database className="w-3 h-3" /> {incident.category}</span>
+                            <span className="flex items-center gap-1.5"><Clock className="w-3 h-3" /> {new Date(incident.createdAt).toLocaleTimeString()}</span>
+                          </div>
                         </div>
-                        <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full severity-${incident.severity}`}>
+                      </div>
+                      
+                      <div className="flex items-center gap-3 shrink-0">
+                        {incident.similarIncidents?.length > 0 && (
+                          <span className="text-[10px] font-bold uppercase tracking-widest text-purple-light bg-purple/10 px-2 py-1 rounded border border-purple/20">
+                            {incident.similarIncidents.length} Memories
+                          </span>
+                        )}
+                        <span className={`text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded border severity-${incident.severity}`}>
                           {incident.severity}
                         </span>
-                      </div>
-                      <div className="flex items-center gap-4 mt-3 text-xs text-text-muted">
-                        <span className="flex items-center gap-1"><Database className="w-3.5 h-3.5" /> {incident.category}</span>
-                        {incident.similarIncidents?.length > 0 && (
-                          <span className="flex items-center gap-1 text-purple"><Brain className="w-3.5 h-3.5" /> {incident.similarIncidents.length} memories</span>
-                        )}
-                        <span>{new Date(incident.createdAt).toLocaleTimeString()}</span>
                       </div>
                     </motion.div>
                   ))
@@ -134,31 +138,46 @@ export default function Dashboard() {
               </div>
             </div>
 
-            {/* System Status */}
-            <div className="glass-card rounded-xl p-5 border border-border">
-              <h2 className="text-lg font-semibold text-text-primary mb-4 flex items-center gap-2">
-                <CheckCircle2 className="w-5 h-5 text-success" />
-                System Integrations
-              </h2>
+            {/* 3. KPIS & MEMORY ACTIVITY */}
+            <div className="space-y-6">
               
-              <div className="space-y-4">
-                <IntegrationStatus 
-                  name="NVIDIA Inference" 
-                  status={analytics?.runtimeAnalytics?.provider === 'nvidia-api' ? 'online' : 'mock'} 
-                  model={Object.keys(analytics?.runtimeAnalytics?.modelUsage || {})[0] || 'Llama 3.1 70B'}
-                />
-                <IntegrationStatus 
-                  name="Hindsight Memory" 
-                  status={analytics?.memoryStats?.provider === 'hindsight-sdk' ? 'online' : 'local'} 
-                  detail={`${analytics?.memoryStats?.totalMemories || 0} vectors stored`}
-                />
-                <IntegrationStatus 
-                  name="CascadeFlow Router" 
-                  status={analytics?.runtimeAnalytics?.provider === 'cascadeflow-sdk' ? 'online' : 'routing-only'} 
-                  detail="Dynamic multi-model routing"
-                />
+              <div className="flex items-center justify-between px-2">
+                <h2 className="text-[10px] font-bold text-white tracking-widest uppercase flex items-center gap-2">
+                  <BarChart3 className="w-4 h-4 text-purple-light" />
+                  Key Metrics
+                </h2>
               </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <StatBox label="Analyzed" value={analytics?.totalIncidents || 0} />
+                <StatBox label="Latency" value={`${analytics?.avgResolutionTime || 0}ms`} color="cyan" />
+                <StatBox label="Mem Hits" value={`${analytics?.memoryHitRate || 0}%`} color="purple" />
+                <StatBox label="Cost" value={`$${analytics?.totalCost?.toFixed(3) || 0}`} color="success" />
+              </div>
+
+              <div className="card-raised rounded-xl p-5 border border-white/5">
+                <h3 className="text-[10px] font-bold text-text-muted tracking-widest uppercase mb-4 flex items-center gap-2">
+                  <ShieldCheck className="w-3.5 h-3.5 text-success" />
+                  Pipeline Integrity
+                </h3>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center text-[10px] font-mono uppercase tracking-widest">
+                    <span className="text-text-secondary">Success Rate</span>
+                    <span className="text-white font-bold">{analytics?.totalIncidents > 0 ? Math.round((analytics.pipelineSuccess.successful + analytics.pipelineSuccess.healthy) / analytics.totalIncidents * 100) : 0}%</span>
+                  </div>
+                  <div className="w-full h-1 bg-white/5 rounded-full overflow-hidden">
+                    <div className="h-full bg-success rounded-full" style={{ width: `${analytics?.totalIncidents > 0 ? ((analytics.pipelineSuccess.successful + analytics.pipelineSuccess.healthy) / analytics.totalIncidents * 100) : 0}%` }} />
+                  </div>
+                  
+                  <div className="pt-2 border-t border-white/5 flex justify-between items-center text-[10px] font-mono uppercase tracking-widest">
+                    <span className="text-text-secondary">Avg Confidence</span>
+                    <span className="text-white font-bold">{analytics?.avgConfidence || 0}%</span>
+                  </div>
+                </div>
+              </div>
+
             </div>
+
           </div>
         </>
       )}
@@ -166,37 +185,13 @@ export default function Dashboard() {
   );
 }
 
-function StatCard({ title, value, icon, trend }) {
+function SystemStatusNode({ label, status, active }) {
   return (
-    <div className="glass-card rounded-xl p-5 border border-border flex flex-col justify-between h-32 relative overflow-hidden group">
-      <div className="absolute -right-6 -top-6 w-24 h-24 bg-accent/5 rounded-full blur-2xl group-hover:bg-accent/10 transition-colors" />
-      <div className="flex items-center justify-between">
-        <span className="text-sm font-medium text-text-secondary">{title}</span>
-        <div className="p-2 bg-white/[0.03] rounded-lg">{icon}</div>
-      </div>
-      <div>
-        <div className="text-2xl font-bold text-text-primary tracking-tight">{value}</div>
-        <div className="text-xs text-text-muted mt-1">{trend}</div>
-      </div>
-    </div>
-  );
-}
-
-function IntegrationStatus({ name, status, detail, model }) {
-  const isOnline = status === 'online';
-  return (
-    <div className="flex items-start gap-3 p-3 rounded-lg bg-bg-secondary border border-border">
-      <div className={`mt-0.5 w-2 h-2 rounded-full flex-shrink-0 ${isOnline ? 'bg-success shadow-[0_0_8px_rgba(34,197,94,0.5)]' : 'bg-warning shadow-[0_0_8px_rgba(245,158,11,0.5)]'}`} />
-      <div>
-        <div className="text-sm font-medium text-text-primary flex items-center gap-2">
-          {name}
-          {!isOnline && <span className="text-[9px] uppercase px-1.5 py-0.5 rounded bg-warning/10 text-warning border border-warning/20">{status}</span>}
-        </div>
-        {(detail || model) && (
-          <div className="text-xs text-text-muted mt-1">
-            {model ? `Model: ${model}` : detail}
-          </div>
-        )}
+    <div className="card-glass p-3 rounded-lg border border-white/5 flex flex-col gap-1.5 backdrop-blur-md">
+      <div className="text-[10px] font-bold text-text-muted uppercase tracking-widest">{label}</div>
+      <div className="flex items-center gap-1.5">
+        <div className={`w-1.5 h-1.5 rounded-full ${active ? 'bg-success pulse-green' : 'bg-warning'}`} />
+        <span className="text-xs font-mono font-bold text-white uppercase tracking-wider">{status}</span>
       </div>
     </div>
   );
