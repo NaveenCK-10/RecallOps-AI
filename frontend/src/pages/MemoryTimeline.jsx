@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Brain, Search, Clock, Tag, Zap } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Brain, Search, Clock, Tag, Database, AlertCircle, FileText, CheckCircle2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { searchMemory, getMemories, getMemoryStats } from '../services/api';
 
@@ -8,6 +9,29 @@ export default function MemoryTimeline() {
   const [stats, setStats] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+
+  const handleMemoryClick = (mem) => {
+    // Reconstruct an incident-like object so the Analyze page can render it seamlessly
+    const reconstructedIncident = {
+      incidentId: mem.memoryId || mem.id,
+      title: mem.summary,
+      rawLog: mem.content,
+      severity: mem.metadata?.severity || 'medium',
+      rootCause: mem.content, 
+      resolution: mem.metadata?.resolution || 'No specific resolution recorded in this memory.',
+      category: mem.metadata?.category || mem.type,
+      createdAt: mem.createdAt,
+      // Provide dummy routing data for historical viewing
+      runtimeDecisions: {
+        complexity: 'historical',
+        modelName: 'Hindsight DB',
+        actualLatency: 0,
+        actualCost: 0
+      }
+    };
+    navigate('/analyze', { state: { incident: reconstructedIncident } });
+  };
 
   useEffect(() => {
     fetchMemories();
@@ -102,7 +126,8 @@ export default function MemoryTimeline() {
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: idx * 0.05 }}
               key={mem.memoryId} 
-              className="glass-card rounded-xl p-5 border border-border flex gap-4"
+              onClick={() => handleMemoryClick(mem)}
+              className="glass-card rounded-xl p-5 border border-border flex gap-4 cursor-pointer hover:border-purple/50 hover:shadow-[0_0_15px_rgba(168,85,247,0.15)] transition-all group"
             >
               <div className="flex flex-col items-center gap-2 mt-1 shrink-0">
                 <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
@@ -159,5 +184,4 @@ export default function MemoryTimeline() {
   );
 }
 
-// Need some extra icons
-import { Database, AlertCircle, FileText, CheckCircle2 } from 'lucide-react';
+
