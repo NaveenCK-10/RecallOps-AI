@@ -34,9 +34,9 @@ export default function AnalyzeIncident() {
     if (!file) return;
 
     const ext = '.' + file.name.split('.').pop().toLowerCase();
-    const isValidExt = VALID_EXTENSIONS.includes(ext) || file.type === 'text/plain' || file.type === 'application/json';
+    const isValidExt = VALID_EXTENSIONS.includes(ext);
     
-    if (!isValidExt && file.name.indexOf('.') !== -1) {
+    if (!isValidExt) {
       setError(`Unsupported format. Please upload ${VALID_EXTENSIONS.join(', ')}`);
       return;
     }
@@ -73,6 +73,7 @@ export default function AnalyzeIncident() {
   const handleRemoveFile = () => {
     setFileMeta(null);
     setLogInput('');
+    setError('');
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
@@ -172,13 +173,15 @@ FATAL: too many connections for role "app_user"
             <textarea
               value={logInput}
               onChange={(e) => {
-                if (fileMeta) handleRemoveFile();
+                if (fileMeta) {
+                  setFileMeta(null);
+                  if (fileInputRef.current) fileInputRef.current.value = '';
+                }
                 setLogInput(e.target.value);
               }}
               maxLength={fileMeta ? undefined : MAX_TEXT_CHARS}
-              readOnly={!!fileMeta}
               placeholder="Paste exception stack trace, Kibana logs, or Datadog alerts here..."
-              className={`flex-1 w-full bg-transparent resize-none p-4 text-sm font-mono text-text-primary focus:outline-none focus:ring-0 placeholder:text-text-muted premium-scrollbar ${fileMeta ? 'opacity-70 cursor-not-allowed' : ''}`}
+              className="flex-1 w-full bg-transparent resize-none p-4 text-sm font-mono text-text-primary focus:outline-none focus:ring-0 placeholder:text-text-muted premium-scrollbar"
             />
             
             <div className="p-3 border-t border-border bg-bg-secondary/50 rounded-b-lg flex justify-between items-center shrink-0">
@@ -203,7 +206,7 @@ FATAL: too many connections for role "app_user"
               ) : (
                 <span className={`text-xs ${logInput.length >= MAX_TEXT_CHARS ? 'text-warning font-medium' : 'text-text-muted'}`}>
                   {logInput.length.toLocaleString()} / {MAX_TEXT_CHARS.toLocaleString()} characters
-                  {logInput.length >= MAX_TEXT_CHARS && ' (Limit reached)'}
+                  {logInput.length > MAX_TEXT_CHARS ? ' (Limit exceeded)' : logInput.length === MAX_TEXT_CHARS ? ' (Limit reached)' : ''}
                 </span>
               )}
               
