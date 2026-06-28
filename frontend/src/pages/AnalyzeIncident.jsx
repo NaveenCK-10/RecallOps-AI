@@ -41,6 +41,11 @@ export default function AnalyzeIncident() {
       return;
     }
 
+    if (file.size === 0) {
+      setError('File is empty.');
+      return;
+    }
+
     if (file.size > MAX_FILE_SIZE) {
       setError(`File is too large (${formatFileSize(file.size)}). Maximum is 5 MB.`);
       return;
@@ -136,7 +141,7 @@ FATAL: too many connections for role "app_user"
             <div className="flex items-center justify-between p-3 border-b border-border bg-bg-secondary/50 rounded-t-lg shrink-0">
               <div className="flex items-center gap-2 text-sm font-medium text-text-secondary">
                 <Terminal className="w-4 h-4" />
-                Raw Input
+                {fileMeta ? 'File Upload Mode' : 'Raw Text Mode'}
               </div>
               <div className="flex items-center gap-3">
                 <span className="text-[10px] text-text-muted uppercase hidden sm:inline-block">or Drag & Drop</span>
@@ -182,12 +187,15 @@ FATAL: too many connections for role "app_user"
                   initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
                   className="flex items-center gap-3 bg-success/10 border border-success/20 px-3 py-1.5 rounded-lg"
                 >
-                  <Check className="w-4 h-4 text-success" />
-                  <span className="text-xs font-medium text-success">File Loaded:</span>
-                  <div className="flex items-center gap-1.5 text-xs text-text-primary">
+                  <div className="flex items-center gap-1.5 text-xs font-medium text-text-primary">
                     <FileText className="w-3.5 h-3.5 text-text-muted" />
-                    {fileMeta.name} <span className="text-text-muted">({formatFileSize(fileMeta.size)})</span>
+                    {fileMeta.name}
+                    <span className="text-text-muted mx-1">|</span>
+                    <span className="text-text-muted">{formatFileSize(fileMeta.size)} / 5 MB</span>
                   </div>
+                  <span className="text-xs font-medium text-success ml-2 flex items-center gap-1">
+                    <Check className="w-3.5 h-3.5" /> Ready to Analyze
+                  </span>
                   <button onClick={handleRemoveFile} className="ml-2 text-text-muted hover:text-danger transition-colors p-0.5 rounded-full hover:bg-danger/10">
                     <X className="w-3.5 h-3.5" />
                   </button>
