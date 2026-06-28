@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Terminal, Send, Brain, Cpu, Database, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Terminal, Send, Brain, Cpu, Database, AlertCircle, CheckCircle2, Upload, FileText, X, Check } from 'lucide-react';
+import { useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { analyzeIncident } from '../services/api';
 import { useApp } from '../context/AppContext';
@@ -13,6 +14,62 @@ export default function AnalyzeIncident() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [result, setResult] = useState(savedIncident || null);
   const [error, setError] = useState('');
+  
+  const [isDragging, setIsDragging] = useState(false);
+  const [fileMeta, setFileMeta] = useState(null);
+  const fileInputRef = useRef(null);
+
+  const MAX_TEXT_CHARS = 10000;
+  const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
+  const VALID_EXTENSIONS = ['.log', '.txt', '.json', '.jsonl'];
+
+  const formatFileSize = (bytes) => {
+    if (bytes < 1024) return bytes + ' B';
+    else if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+    else return (bytes / 1048576).toFixed(1) + ' MB';
+  };
+
+  const processFile = (file) => {
+    setError('');
+    if (!file) return;
+
+    const ext = '.' + file.name.split('.').pop().toLowerCase();
+    const isValidExt = VALID_EXTENSIONS.includes(ext) || file.type === 'text/plain' || file.type === 'application/json';
+    
+    if (!isValidExt && file.name.indexOf('.') !== -1) {
+      setError(`Unsupported format. Please upload ${VALID_EXTENSIONS.join(', ')}`);
+      return;
+    }
+
+    if (file.size > MAX_FILE_SIZE) {
+      setError(`File is too large (${formatFileSize(file.size)}). Maximum is 5 MB.`);
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      setLogInput(e.target.result);
+      setFileMeta({ name: file.name, size: file.size });
+    };
+    reader.onerror = () => setError('Failed to read file.');
+    reader.readAsText(file);
+  };
+
+  const handleDragOver = (e) => { e.preventDefault(); setIsDragging(true); };
+  const handleDragLeave = () => setIsDragging(false);
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      processFile(e.dataTransfer.files[0]);
+    }
+  };
+
+  const handleRemoveFile = () => {
+    setFileMeta(null);
+    setLogInput('');
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
 
   const handleAnalyze = async () => {
     if (!logInput.trim()) {
@@ -38,6 +95,7 @@ export default function AnalyzeIncident() {
   };
 
   const loadSample = () => {
+    handleRemoveFile();
     setLogInput(`2024-03-15T14:23:45.123Z ERROR [db-pool] PostgreSQL connection pool exhausted
 Max connections: 100/100 active, 0 idle
 FATAL: too many connections for role "app_user"
@@ -55,32 +113,97 @@ FATAL: too many connections for role "app_user"
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Input Section */}
         <div className="space-y-4">
-          <div className="glass-card rounded-xl p-1 border border-border flex flex-col h-[500px]">
-            <div className="flex items-center justify-between p-3 border-b border-border bg-bg-secondary/50 rounded-t-lg">
+          <div 
+            className={`glass-card rounded-xl p-1 border flex flex-col h-[600px] transition-colors relative overflow-hidden ${isDragging ? 'border-accent bg-accent/5' : 'border-border'}`}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+          >
+            {/* Drag Hover Overlay */}
+            <AnimatePresence>
+              {isDragging && (
+                <motion.div 
+                  initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                  className="absolute inset-0 z-50 bg-bg-card/80 backdrop-blur-sm flex flex-col items-center justify-center border-2 border-dashed border-accent rounded-xl"
+                >
+                  <Upload className="w-10 h-10 text-accent mb-3 animate-bounce" />
+                  <p className="text-lg font-medium text-text-primary">Drop log file here</p>
+                  <p className="text-sm text-text-muted mt-1">Maximum size 5 MB</p>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            <div className="flex items-center justify-between p-3 border-b border-border bg-bg-secondary/50 rounded-t-lg shrink-0">
               <div className="flex items-center gap-2 text-sm font-medium text-text-secondary">
                 <Terminal className="w-4 h-4" />
                 Raw Input
               </div>
-              <button 
-                onClick={loadSample}
-                className="text-xs text-accent hover:text-accent-light transition-colors"
-              >
-                Load Sample
-              </button>
+              <div className="flex items-center gap-3">
+                <span className="text-[10px] text-text-muted uppercase hidden sm:inline-block">or Drag & Drop</span>
+                <button 
+                  onClick={() => fileInputRef.current?.click()}
+                  className="text-xs bg-bg-card hover:bg-border border border-border text-text-primary px-3 py-1.5 rounded transition-colors flex items-center gap-1.5"
+                >
+                  <Upload className="w-3.5 h-3.5" />
+                  Upload Log
+                </button>
+                <input 
+                  type="file" 
+                  ref={fileInputRef} 
+                  className="hidden" 
+                  accept=".log,.txt,.json,.jsonl" 
+                  onChange={(e) => processFile(e.target.files?.[0])} 
+                />
+                <div className="w-px h-4 bg-border mx-1" />
+                <button 
+                  onClick={loadSample}
+                  className="text-xs text-accent hover:text-accent-light transition-colors"
+                >
+                  Load Sample
+                </button>
+              </div>
             </div>
+            
             <textarea
               value={logInput}
-              onChange={(e) => setLogInput(e.target.value)}
+              onChange={(e) => {
+                if (fileMeta) handleRemoveFile();
+                setLogInput(e.target.value);
+              }}
+              maxLength={fileMeta ? undefined : MAX_TEXT_CHARS}
+              readOnly={!!fileMeta}
               placeholder="Paste exception stack trace, Kibana logs, or Datadog alerts here..."
-              className="flex-1 w-full bg-transparent resize-none p-4 text-sm font-mono text-text-primary focus:outline-none focus:ring-0 placeholder:text-text-muted"
+              className={`flex-1 w-full bg-transparent resize-none p-4 text-sm font-mono text-text-primary focus:outline-none focus:ring-0 placeholder:text-text-muted premium-scrollbar ${fileMeta ? 'opacity-70 cursor-not-allowed' : ''}`}
             />
-            <div className="p-3 border-t border-border bg-bg-secondary/50 rounded-b-lg flex justify-between items-center">
-              <span className="text-xs text-text-muted">{logInput.length} characters</span>
+            
+            <div className="p-3 border-t border-border bg-bg-secondary/50 rounded-b-lg flex justify-between items-center shrink-0">
+              {fileMeta ? (
+                <motion.div 
+                  initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+                  className="flex items-center gap-3 bg-success/10 border border-success/20 px-3 py-1.5 rounded-lg"
+                >
+                  <Check className="w-4 h-4 text-success" />
+                  <span className="text-xs font-medium text-success">File Loaded:</span>
+                  <div className="flex items-center gap-1.5 text-xs text-text-primary">
+                    <FileText className="w-3.5 h-3.5 text-text-muted" />
+                    {fileMeta.name} <span className="text-text-muted">({formatFileSize(fileMeta.size)})</span>
+                  </div>
+                  <button onClick={handleRemoveFile} className="ml-2 text-text-muted hover:text-danger transition-colors p-0.5 rounded-full hover:bg-danger/10">
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </motion.div>
+              ) : (
+                <span className={`text-xs ${logInput.length >= MAX_TEXT_CHARS ? 'text-warning font-medium' : 'text-text-muted'}`}>
+                  {logInput.length.toLocaleString()} / {MAX_TEXT_CHARS.toLocaleString()} characters
+                  {logInput.length >= MAX_TEXT_CHARS && ' (Limit reached)'}
+                </span>
+              )}
+              
               <button
                 onClick={handleAnalyze}
-                disabled={isAnalyzing || !logInput.trim()}
+                disabled={isAnalyzing || !logInput.trim() || (!fileMeta && logInput.length > MAX_TEXT_CHARS)}
                 className={`flex items-center gap-2 px-5 py-2 rounded-lg font-medium transition-all ${
-                  isAnalyzing || !logInput.trim() 
+                  isAnalyzing || !logInput.trim() || (!fileMeta && logInput.length > MAX_TEXT_CHARS)
                     ? 'bg-border text-text-muted cursor-not-allowed' 
                     : 'bg-accent hover:bg-accent-light text-white glow-accent'
                 }`}
@@ -101,10 +224,13 @@ FATAL: too many connections for role "app_user"
           </div>
           
           {error && (
-            <div className="p-4 bg-danger/10 border border-danger/20 text-danger rounded-lg flex items-center gap-2 text-sm">
-              <AlertCircle className="w-4 h-4" />
+            <motion.div 
+              initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
+              className="p-4 bg-danger/10 border border-danger/20 text-danger rounded-lg flex items-center gap-2 text-sm"
+            >
+              <AlertCircle className="w-4 h-4 shrink-0" />
               {error}
-            </div>
+            </motion.div>
           )}
         </div>
 
