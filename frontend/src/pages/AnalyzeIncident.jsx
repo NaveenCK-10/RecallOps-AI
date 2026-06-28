@@ -1,13 +1,17 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Terminal, Send, Brain, Cpu, Database, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { useLocation } from 'react-router-dom';
 import { analyzeIncident } from '../services/api';
 import { useApp } from '../context/AppContext';
 
 export default function AnalyzeIncident() {
-  const [logInput, setLogInput] = useState('');
+  const location = useLocation();
+  const savedIncident = location.state?.incident;
+
+  const [logInput, setLogInput] = useState(savedIncident?.rawLog || '');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [result, setResult] = useState(null);
+  const [result, setResult] = useState(savedIncident || null);
   const [error, setError] = useState('');
 
   const handleAnalyze = async () => {
@@ -89,7 +93,7 @@ FATAL: too many connections for role "app_user"
                 ) : (
                   <>
                     <Send className="w-4 h-4" />
-                    Analyze with AI
+                    {savedIncident ? 'Re-analyze' : 'Analyze with AI'}
                   </>
                 )}
               </button>
@@ -142,7 +146,15 @@ FATAL: too many connections for role "app_user"
                   result.severity === 'high' ? 'from-warning to-warning/50' : 
                   'from-success to-success/50'
                 }`} />
-                <div className="shrink-0 p-5 border-b border-border/30 bg-bg-card/40 backdrop-blur-md z-10">
+                <div className="shrink-0 p-5 border-b border-border/30 bg-bg-card/40 backdrop-blur-md z-10 flex flex-col gap-3">
+                  {savedIncident && (
+                    <div className="flex items-center gap-2 text-xs font-medium text-accent">
+                      <Database className="w-3.5 h-3.5" />
+                      <span>Viewing Saved Analysis</span>
+                      <span className="text-text-muted px-1.5">•</span>
+                      <span className="text-text-muted">Analyzed {new Date(savedIncident.createdAt).toLocaleDateString()} • {new Date(savedIncident.createdAt).toLocaleTimeString()}</span>
+                    </div>
+                  )}
                   <div className="flex items-start justify-between gap-4">
                     <h2 className="text-lg font-bold text-text-primary leading-tight">{result.title}</h2>
                     <span className={`text-[10px] uppercase font-bold px-2 py-1 rounded-full shrink-0 severity-${result.severity}`}>

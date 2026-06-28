@@ -111,7 +111,7 @@ export default function Dashboard() {
                       transition={{ delay: idx * 0.1 }}
                       key={incident.incidentId} 
                       className="p-4 rounded-lg bg-bg-secondary border border-border hover:border-border-bright transition-colors cursor-pointer group"
-                      onClick={() => navigate('/analyze', { state: { incidentId: incident.incidentId }})}
+                      onClick={() => navigate('/analyze', { state: { incident }})}
                     >
                       <div className="flex justify-between items-start mb-2">
                         <div className="font-medium text-text-primary group-hover:text-accent-light transition-colors">
