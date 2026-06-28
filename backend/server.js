@@ -36,7 +36,7 @@ const PORT = config.PORT || 3001;
 
 const start = async () => {
   await connectDB();
-  app.listen(PORT, () => {
+  app.listen(PORT, '0.0.0.0', () => {
     console.log(`\n🚀 RecallOps AI Backend running on port ${PORT}`);
     console.log(`   Environment: ${config.NODE_ENV}`);
     console.log(`   MongoDB: ${config.MONGODB_URI ? 'configured' : 'using in-memory store'}\n`);
