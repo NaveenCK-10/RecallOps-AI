@@ -159,7 +159,7 @@ FATAL: too many connections for role "app_user"
                       
                       <div>
                         <h4 className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-1">Recommended Resolution</h4>
-                        <div className="p-3 bg-bg-secondary rounded-lg border border-border whitespace-pre-wrap text-sm text-text-primary font-mono leading-relaxed">
+                        <div className="p-3 bg-bg-secondary rounded-lg border border-border whitespace-pre-wrap text-sm text-text-primary font-mono leading-relaxed overflow-x-auto">
                           {result.resolution}
                         </div>
                       </div>
