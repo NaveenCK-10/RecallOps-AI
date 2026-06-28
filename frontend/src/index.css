@@ -123,3 +123,28 @@ body {
   animation: shimmer 1.5s infinite;
   border-radius: 8px;
 }
+
+/* Premium Scrollbar */
+.premium-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #818cf8 #111827;
+}
+
+.premium-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.premium-scrollbar::-webkit-scrollbar-track {
+  background: #111827;
+  border-radius: 8px;
+}
+
+.premium-scrollbar::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #a855f7, #6366f1);
+  border-radius: 8px;
+}
+
+.premium-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #c084fc, #818cf8);
+}

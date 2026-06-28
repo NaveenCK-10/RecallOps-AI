@@ -134,88 +134,93 @@ FATAL: too many connections for role "app_user"
                 key="result"
                 initial={{ opacity: 0, scale: 0.98 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="h-full flex flex-col gap-4 overflow-y-auto pr-2"
+                className="h-[75vh] min-h-[500px] max-h-[800px] flex flex-col glass-card rounded-xl border border-border overflow-hidden"
               >
-                {/* AI Analysis */}
-                <div className="glass-card rounded-xl border border-border overflow-hidden">
-                  <div className={`h-1.5 bg-gradient-to-r ${
-                    result.severity === 'critical' ? 'from-danger to-danger/50' : 
-                    result.severity === 'high' ? 'from-warning to-warning/50' : 
-                    'from-success to-success/50'
-                  }`} />
-                  <div className="p-5">
-                    <div className="flex items-start justify-between gap-4 mb-4">
-                      <h2 className="text-lg font-bold text-text-primary">{result.title}</h2>
-                      <span className={`text-[10px] uppercase font-bold px-2 py-1 rounded-full shrink-0 severity-${result.severity}`}>
-                        {result.severity}
-                      </span>
-                    </div>
-                    
-                    <div className="space-y-4">
-                      <div>
-                        <h4 className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-1">Root Cause</h4>
-                        <div className="max-h-40 overflow-y-auto pr-2 custom-scrollbar">
-                          <p className="text-sm text-text-primary leading-relaxed">{result.rootCause}</p>
-                        </div>
-                      </div>
-                      
-                      <div>
-                        <h4 className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-1">Recommended Resolution</h4>
-                        <div className="p-3 bg-bg-secondary rounded-lg border border-border whitespace-pre-wrap text-sm text-text-primary font-mono leading-relaxed overflow-x-auto overflow-y-auto max-h-60 custom-scrollbar">
-                          {result.resolution}
-                        </div>
-                      </div>
-                    </div>
+                {/* Fixed Header */}
+                <div className={`shrink-0 h-1.5 bg-gradient-to-r ${
+                  result.severity === 'critical' ? 'from-danger to-danger/50' : 
+                  result.severity === 'high' ? 'from-warning to-warning/50' : 
+                  'from-success to-success/50'
+                }`} />
+                <div className="shrink-0 p-5 border-b border-border/30 bg-bg-card/40 backdrop-blur-md z-10">
+                  <div className="flex items-start justify-between gap-4">
+                    <h2 className="text-lg font-bold text-text-primary leading-tight">{result.title}</h2>
+                    <span className={`text-[10px] uppercase font-bold px-2 py-1 rounded-full shrink-0 severity-${result.severity}`}>
+                      {result.severity}
+                    </span>
                   </div>
                 </div>
-
-                {/* Runtime & Memory Intel */}
-                <div className="grid grid-cols-2 gap-4">
-                  {/* Memory Context */}
-                  <div className="glass-card rounded-xl border border-border p-4">
-                    <h4 className="flex items-center gap-2 text-sm font-semibold text-text-primary mb-3">
-                      <Brain className="w-4 h-4 text-purple" />
-                      Hindsight Context
-                    </h4>
-                    {result.similarIncidents?.length > 0 ? (
-                      <div className="space-y-3">
-                        <div className="text-xs text-text-secondary">Found {result.similarIncidents.length} similar prior incidents. Model context augmented.</div>
-                        <div className="p-2.5 bg-purple/10 border border-purple/20 rounded-lg text-xs">
-                          <span className="font-medium text-purple-400 block mb-1">Top Match: {Math.round(result.similarIncidents[0].similarity * 100)}%</span>
-                          <span className="text-text-primary line-clamp-2">{result.similarIncidents[0].title}</span>
-                          <span className="text-text-muted mt-1 block">{result.similarIncidents[0].resolution.substring(0,60)}...</span>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="text-xs text-text-muted">No similar prior incidents found. This is a novel issue.</div>
-                    )}
-                  </div>
-
-                  {/* CascadeFlow Routing */}
-                  <div className="glass-card rounded-xl border border-border p-4">
-                    <h4 className="flex items-center gap-2 text-sm font-semibold text-text-primary mb-3">
-                      <Cpu className="w-4 h-4 text-cyan" />
-                      CascadeFlow Decision
-                    </h4>
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-xs">
-                        <span className="text-text-muted">Complexity:</span>
-                        <span className="font-medium text-text-primary capitalize">{result.runtimeDecisions?.complexity}</span>
-                      </div>
-                      <div className="flex justify-between text-xs">
-                        <span className="text-text-muted">Routed Model:</span>
-                        <span className="font-medium text-accent-light">{result.runtimeDecisions?.modelName}</span>
-                      </div>
-                      <div className="flex justify-between text-xs">
-                        <span className="text-text-muted">Latency:</span>
-                        <span className="font-medium text-text-primary">{result.runtimeDecisions?.actualLatency}ms</span>
-                      </div>
-                      <div className="flex justify-between text-xs">
-                        <span className="text-text-muted">Est. Cost:</span>
-                        <span className="font-medium text-success">${result.runtimeDecisions?.actualCost}</span>
+                
+                {/* Scrollable Content Body */}
+                <div className="flex-1 overflow-y-auto premium-scrollbar p-5 space-y-8">
+                  
+                  {/* Root Cause & Resolution */}
+                  <div className="space-y-6">
+                    <div>
+                      <h4 className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-2">Root Cause</h4>
+                      <p className="text-sm text-text-primary leading-relaxed">{result.rootCause}</p>
+                    </div>
+                    
+                    <div>
+                      <h4 className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-2">Recommended Resolution</h4>
+                      <div className="p-4 bg-bg-secondary rounded-lg border border-border whitespace-pre-wrap text-sm text-text-primary font-mono leading-relaxed overflow-x-auto premium-scrollbar">
+                        {result.resolution}
                       </div>
                     </div>
                   </div>
+
+                  {/* Divider */}
+                  <div className="h-px bg-border/40 w-full" />
+
+                  {/* Runtime & Memory Intel */}
+                  <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                    {/* Memory Context */}
+                    <div className="bg-bg-secondary/50 rounded-xl border border-border/50 p-4">
+                      <h4 className="flex items-center gap-2 text-sm font-semibold text-text-primary mb-3">
+                        <Brain className="w-4 h-4 text-purple" />
+                        Hindsight Context
+                      </h4>
+                      {result.similarIncidents?.length > 0 ? (
+                        <div className="space-y-3">
+                          <div className="text-xs text-text-secondary">Found {result.similarIncidents.length} similar prior incidents. Model context augmented.</div>
+                          <div className="p-3 bg-purple/10 border border-purple/20 rounded-lg text-xs">
+                            <span className="font-medium text-purple-400 block mb-1">Top Match: {Math.round(result.similarIncidents[0].similarity * 100)}%</span>
+                            <span className="text-text-primary line-clamp-2">{result.similarIncidents[0].title}</span>
+                            <span className="text-text-muted mt-1 block">{result.similarIncidents[0].resolution.substring(0,80)}...</span>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="text-xs text-text-muted">No similar prior incidents found. This is a novel issue.</div>
+                      )}
+                    </div>
+
+                    {/* CascadeFlow Routing */}
+                    <div className="bg-bg-secondary/50 rounded-xl border border-border/50 p-4">
+                      <h4 className="flex items-center gap-2 text-sm font-semibold text-text-primary mb-3">
+                        <Cpu className="w-4 h-4 text-cyan" />
+                        CascadeFlow Decision
+                      </h4>
+                      <div className="space-y-2.5">
+                        <div className="flex justify-between text-xs border-b border-border/30 pb-2">
+                          <span className="text-text-muted">Complexity:</span>
+                          <span className="font-medium text-text-primary capitalize">{result.runtimeDecisions?.complexity}</span>
+                        </div>
+                        <div className="flex justify-between text-xs border-b border-border/30 pb-2">
+                          <span className="text-text-muted">Routed Model:</span>
+                          <span className="font-medium text-accent-light">{result.runtimeDecisions?.modelName}</span>
+                        </div>
+                        <div className="flex justify-between text-xs border-b border-border/30 pb-2">
+                          <span className="text-text-muted">Latency:</span>
+                          <span className="font-medium text-text-primary">{result.runtimeDecisions?.actualLatency}ms</span>
+                        </div>
+                        <div className="flex justify-between text-xs">
+                          <span className="text-text-muted">Est. Cost:</span>
+                          <span className="font-medium text-success">${result.runtimeDecisions?.actualCost}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
                 </div>
               </motion.div>
             ) : (
