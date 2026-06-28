@@ -154,12 +154,14 @@ FATAL: too many connections for role "app_user"
                     <div className="space-y-4">
                       <div>
                         <h4 className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-1">Root Cause</h4>
-                        <p className="text-sm text-text-primary leading-relaxed">{result.rootCause}</p>
+                        <div className="max-h-40 overflow-y-auto pr-2 custom-scrollbar">
+                          <p className="text-sm text-text-primary leading-relaxed">{result.rootCause}</p>
+                        </div>
                       </div>
                       
                       <div>
                         <h4 className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-1">Recommended Resolution</h4>
-                        <div className="p-3 bg-bg-secondary rounded-lg border border-border whitespace-pre-wrap text-sm text-text-primary font-mono leading-relaxed overflow-x-auto">
+                        <div className="p-3 bg-bg-secondary rounded-lg border border-border whitespace-pre-wrap text-sm text-text-primary font-mono leading-relaxed overflow-x-auto overflow-y-auto max-h-60 custom-scrollbar">
                           {result.resolution}
                         </div>
                       </div>
